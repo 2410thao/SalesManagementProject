@@ -10,7 +10,7 @@ import (
 
 // ConnectDB là hàm để kết nối tới cơ sở dữ liệu
 func ConnectDB() *sql.DB {
-	dsn := "root:1234@tcp(127.0.0.1:3306)/hieu" // Sửa username, password và database nếu cần
+	dsn := "root:1234@tcp(127.0.0.1:3306)/hieu" // Sửa username, password và tên database nếu cần
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal("Lỗi khi kết nối MySQL: ", err)
