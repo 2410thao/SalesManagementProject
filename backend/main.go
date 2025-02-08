@@ -136,7 +136,7 @@ func main() {
 			return
 		}
 
-		query := `DELETE FROM products WHERE id=?`
+		query := `DELETE FROM products WHERE product_id=?`
 		_, err := db.Exec(query, id)
 		if err != nil {
 			log.Printf("Lỗi khi xóa sản phẩm: %v", err)
