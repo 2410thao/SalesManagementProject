@@ -67,7 +67,7 @@ func main() {
 	// API Lấy danh sách sản phẩm
 	app.Get("/api/products", func(ctx iris.Context) {
 		var products []models.Product
-		rows, err := db.Query("SELECT product_name, price, cost, quantity, unit, image, category_id, ManufacturingDate, ExpiryDate FROM products")
+		rows, err := db.Query("SELECT product_id, product_name, price, cost, quantity, unit, image, category_id, ManufacturingDate, ExpiryDate FROM products")
 		if err != nil {
 			log.Println("Database query error:", err)
 			ctx.StatusCode(iris.StatusInternalServerError)
@@ -80,7 +80,7 @@ func main() {
 			var product models.Product
 			var categoryID sql.NullInt64
 
-			if err := rows.Scan(&product.ProductName, &product.Price, &product.Cost, &product.Quantity, &product.Unit, &product.Image, &categoryID, &product.ManufacturingDate, &product.ExpiryDate); err != nil {
+			if err := rows.Scan(&product.ProductID, &product.ProductName, &product.Price, &product.Cost, &product.Quantity, &product.Unit, &product.Image, &categoryID, &product.ManufacturingDate, &product.ExpiryDate); err != nil {
 				log.Println("Error scanning row:", err)
 				continue
 			}
@@ -96,6 +96,56 @@ func main() {
 		}
 
 		ctx.JSON(iris.Map{"products": products})
+	})
+
+	// API Cập nhật sản phẩm
+	app.Put("/api/products/{id:int}", func(ctx iris.Context) {
+		id := ctx.Params().GetIntDefault("id", 0)
+		if id == 0 {
+			ctx.StatusCode(iris.StatusBadRequest)
+			ctx.JSON(iris.Map{"error": "Invalid product ID"})
+			return
+		}
+
+		var product models.Product
+		if err := ctx.ReadJSON(&product); err != nil {
+			log.Println("Error reading JSON:", err)
+			ctx.StatusCode(iris.StatusBadRequest)
+			ctx.JSON(iris.Map{"error": "Invalid input"})
+			return
+		}
+
+		query := `UPDATE products SET product_name=?, price=?, cost=?, quantity=?, unit=?, image=?, category_id=?, ManufacturingDate=?, ExpiryDate=? WHERE product_id=?`
+		_, err := db.Exec(query, product.ProductName, product.Price, product.Cost, product.Quantity, product.Unit, product.Image, product.CategoryID, product.ManufacturingDate, product.ExpiryDate, id)
+		if err != nil {
+			log.Printf("Lỗi khi cập nhật sản phẩm: %v", err)
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.JSON(iris.Map{"error": "Database update failed"})
+			return
+		}
+
+		ctx.JSON(iris.Map{"message": "Cập nhật sản phẩm thành công"})
+	})
+
+	// API Xóa sản phẩm
+	app.Delete("/api/products/{id:int}", func(ctx iris.Context) {
+		id := ctx.Params().GetIntDefault("id", 0)
+		if id == 0 {
+			ctx.StatusCode(iris.StatusBadRequest)
+			ctx.JSON(iris.Map{"error": "Invalid product ID"})
+			return
+		}
+
+		query := `DELETE FROM products WHERE id=?`
+		_, err := db.Exec(query, id)
+		if err != nil {
+			log.Printf("Lỗi khi xóa sản phẩm: %v", err)
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.JSON(iris.Map{"error": "Database delete failed"})
+			return
+		}
+
+		ctx.JSON(iris.Map{"message": "Xóa sản phẩm thành công"})
 	})
 
 	app.Listen(":8080")
