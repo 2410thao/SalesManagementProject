@@ -156,6 +156,7 @@ export default {
 </script>
 
 <style scoped>
+/* Modal Overlay */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -169,14 +170,53 @@ export default {
   z-index: 1000;
 }
 
+/* Modal Container */
 .modal-container {
   background: #fff;
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  width: 450px;
+  width: 400px;
   max-width: 90%;
   text-align: center;
+}
+
+/* Form Styles */
+.product-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Buttons */
+.submit-btn {
+  background-color: #27ae60;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background-color: #219150;
 }
 
 .cancel-btn {
@@ -186,12 +226,38 @@ export default {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  margin-left: 10px;
 }
 
 .cancel-btn:hover {
   background-color: #c0392b;
 }
+/* sCROLL */
+.modal-container {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  width: 450px;
+  max-width: 90%;
+  text-align: center;
+  max-height: 80vh; /* Giới hạn chiều cao modal */
+  overflow-y: auto; /* Bật scroll khi nội dung dài hơn */
+}
+
+/* Tùy chỉnh thanh cuộn (chỉ hiển thị khi cần) */
+.modal-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-container::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 3px;
+}
+
+.modal-container::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
 </style>
 
 <style scoped>
