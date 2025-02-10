@@ -30,7 +30,7 @@ func Register(ctx iris.Context) {
 	}
 
 	// Kết nối DB
-	db := config.ConnectDB()
+	db := config.GetDB()
 	defer db.Close()
 
 	// Kiểm tra username đã tồn tại chưa
@@ -69,7 +69,7 @@ func Login(ctx iris.Context) {
 	}
 
 	// Kết nối DB
-	db := config.ConnectDB()
+	db := config.GetDB()
 	defer db.Close()
 
 	// Kiểm tra username và password

@@ -2,127 +2,125 @@ package controllers
 
 import (
 	"database/sql"
-
+	"demo2501/backend/config"
+	"demo2501/backend/models"
+	"fmt"
 	"log"
-	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/kataras/iris/v12"
 )
 
-var db *sql.DB
+// API: Thêm sản phẩm mới
+func AddProduct(ctx iris.Context) {
+	db := config.GetDB()
+	var product models.Product
 
-func initDB() {
-	var err error
-	connStr := "user=postgres password=yourpassword dbname=yourdb sslmode=disable"
-	db, err = sql.Open("postgres", connStr)
+	if err := ctx.ReadJSON(&product); err != nil {
+		log.Println("Error reading JSON:", err)
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{"error": "Invalid input"})
+		return
+	}
+
+	query := `INSERT INTO products (product_name, price, cost, quantity, unit, image, category_id, ManufacturingDate, ExpiryDate) 
+			  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+	_, err := db.Exec(query, product.ProductName, product.Price, product.Cost, product.Quantity, product.Unit, product.Image, product.CategoryID, product.ManufacturingDate, product.ExpiryDate)
 	if err != nil {
-		log.Fatal("Error connecting to database:", err)
-	}
-}
-
-// Product model
-type Product struct {
-	ID                int        `json:"id"`
-	ProductName       string     `json:"productName"`
-	Price             float64    `json:"price"`
-	Cost              float64    `json:"cost"`
-	Quantity          int        `json:"quantity"`
-	Unit              string     `json:"unit"`
-	CategoryID        int        `json:"categoryId"` // Thêm trường category_id
-	CreatedAt         time.Time  `json:"createdAt"`
-	UpdatedAt         time.Time  `json:"updatedAt"`
-	ImageURL          string     `json:"imageURL"`
-	ManufacturingDate *time.Time `json:"manufacturingDate,omitempty"`
-	ExpiryDate        *time.Time `json:"expiryDate,omitempty"`
-}
-
-// Create product
-// Create product
-// Create product
-func AddProductHandler(ctx iris.Context) {
-	var p Product
-	if err := ctx.ReadJSON(&p); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(map[string]string{"error": "Invalid JSON data"})
-		return
-	}
-
-	// Validate required fields
-	if p.ProductName == "" || p.Price <= 0 || p.Quantity < 0 || p.Unit == "" {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(map[string]string{"error": "Missing or invalid fields"})
-		return
-	}
-
-	// Parse dates
-	if p.ManufacturingDate != nil && p.ExpiryDate != nil && p.ExpiryDate.Before(*p.ManufacturingDate) {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(map[string]string{"error": "ExpiryDate cannot be earlier than ManufacturingDate"})
-		return
-	}
-
-	// Insert into database
-	query := `INSERT INTO products (product_name, price, cost, quantity, unit, category_id, created_at, updated_at, image_url, manufacturing_date, expiry_date)
-VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), $7, $8, $9) RETURNING id`
-	row := db.QueryRow(query, p.ProductName, p.Price, p.Cost, p.Quantity, p.Unit, p.CategoryID, p.ImageURL, p.ManufacturingDate, p.ExpiryDate)
-
-	// Log error in case of failure
-	if err := row.Scan(&p.ID); err != nil {
-		// Log chi tiết lỗi và thêm thông tin về query
-		log.Printf("Error inserting product into DB: %v\nQuery: %s\n", err, query)
+		log.Printf("Lỗi khi thêm sản phẩm vào DB: %v", err)
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(map[string]string{"error": "Failed to insert product"})
+		ctx.JSON(iris.Map{"error": fmt.Sprintf("Database error: %v", err)})
 		return
 	}
 
-	// Return the newly created product
-	ctx.JSON(p)
+	ctx.JSON(iris.Map{"message": "Thêm thành công"})
 }
 
-// Get all products
-func GetProductsHandler(ctx iris.Context) {
-	rows, err := db.Query("SELECT id, product_name, price, cost, quantity, unit, created_at, updated_at, image_url, manufacturing_date, expiry_date FROM products")
+// API: Lấy danh sách sản phẩm
+func GetProducts(ctx iris.Context) {
+	db := config.GetDB()
+	var products []models.Product
+	rows, err := db.Query("SELECT product_id, product_name, price, cost, quantity, unit, image, category_id, ManufacturingDate, ExpiryDate FROM products")
 	if err != nil {
+		log.Println("Database query error:", err)
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(map[string]string{"error": "Failed to fetch products"})
+		ctx.JSON(iris.Map{"error": "Database query failed"})
 		return
 	}
 	defer rows.Close()
 
-	var products []Product
 	for rows.Next() {
-		var p Product
-		if err := rows.Scan(&p.ID, &p.ProductName, &p.Price, &p.Cost, &p.Quantity, &p.Unit, &p.CreatedAt, &p.UpdatedAt, &p.ImageURL, &p.ManufacturingDate, &p.ExpiryDate); err != nil {
-			log.Println("Scan error:", err)
+		var product models.Product
+		var categoryID sql.NullInt64
+
+		if err := rows.Scan(&product.ProductID, &product.ProductName, &product.Price, &product.Cost, &product.Quantity, &product.Unit, &product.Image, &categoryID, &product.ManufacturingDate, &product.ExpiryDate); err != nil {
+			log.Println("Error scanning row:", err)
 			continue
 		}
-		products = append(products, p)
+
+		// Xử lý category_id NULL
+		if categoryID.Valid {
+			product.CategoryID = &categoryID.Int64
+		} else {
+			product.CategoryID = nil
+		}
+
+		products = append(products, product)
 	}
-	ctx.JSON(products)
+
+	ctx.JSON(iris.Map{"products": products})
 }
 
-// Update product
-func UpdateProductHandler(ctx iris.Context) {
+// API: cập nhật sản phẩm
+func UpdateProduct(ctx iris.Context) {
+	db := config.GetDB()
 	id := ctx.Params().GetIntDefault("id", 0)
 	if id == 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(map[string]string{"error": "Invalid product ID"})
+		ctx.JSON(iris.Map{"error": "Invalid product ID"})
 		return
 	}
 
-	var p Product
-	if err := ctx.ReadJSON(&p); err != nil {
+	var product models.Product
+	if err := ctx.ReadJSON(&product); err != nil {
+		log.Println("Error reading JSON:", err)
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(map[string]string{"error": "Invalid JSON data"})
+		ctx.JSON(iris.Map{"error": "Invalid input"})
 		return
 	}
 
-	query := `UPDATE products SET product_name=$1, price=$2, cost=$3, quantity=$4, unit=$5, updated_at=NOW(), image_url=$6, manufacturing_date=$7, expiry_date=$8 WHERE id=$9`
-	_, err := db.Exec(query, p.ProductName, p.Price, p.Cost, p.Quantity, p.Unit, p.ImageURL, p.ManufacturingDate, p.ExpiryDate, id)
+	query := `UPDATE products SET product_name=?, price=?, cost=?, quantity=?, unit=?, image=?, category_id=?, ManufacturingDate=?, ExpiryDate=? WHERE product_id=?`
+	_, err := db.Exec(query, product.ProductName, product.Price, product.Cost, product.Quantity, product.Unit, product.Image, product.CategoryID, product.ManufacturingDate, product.ExpiryDate, id)
 	if err != nil {
+		log.Printf("Lỗi khi cập nhật sản phẩm: %v", err)
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(map[string]string{"error": "Failed to update product"})
+		ctx.JSON(iris.Map{"error": "Database update failed"})
 		return
 	}
-	ctx.JSON(map[string]string{"message": "Product updated successfully"})
+
+	ctx.JSON(iris.Map{"message": "Cập nhật sản phẩm thành công"})
+}
+
+// API: Xóa sản phẩm
+func DeleteProduct(ctx iris.Context) {
+	db := config.GetDB()
+	id := ctx.Params().GetIntDefault("id", 0)
+	if id == 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{"error": "Invalid product ID"})
+		return
+	}
+
+	query := `DELETE FROM products WHERE product_id=?`
+	_, err := db.Exec(query, id)
+	if err != nil {
+		log.Printf("Lỗi khi xóa sản phẩm: %v", err)
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(iris.Map{"error": "Database delete failed"})
+		return
+	}
+
+	ctx.JSON(iris.Map{"message": "Xóa sản phẩm thành công"})
 }

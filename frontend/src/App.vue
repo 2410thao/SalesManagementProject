@@ -110,6 +110,8 @@ a.router-link-active {
         <router-link to="/register" class="nav-link">Đăng ký</router-link>
         <router-link to="/addsanpham" class="nav-link">Thêm sản phẩm</router-link>
         <router-link to="/listproduct" class="nav-link">Danh sách sản phẩm</router-link>
+        <router-link to="/addcategory" class="nav-link">Thêm danh mục</router-link>
+        <router-link to="/listcategory" class="nav-link">Danh sách danh mục</router-link>
       </nav>
     </header>
 

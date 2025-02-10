@@ -4,6 +4,8 @@ import Register from '@/views/RegisterForm.vue'; // Đường dẫn đến Regis
 import Dktieuthuong from '@/views/RegisterTieuthuong.vue'; // Đường dẫn đến RegisterTieuthuong.vue
 import Addsanpham from '@/views/AddProduct.vue'; // Đường dẫn đến RegisterTieuthuong.vue
 import Listproduct from '@/views/ListProduct.vue'; 
+import AddCategory from '@/views/AddCategory.vue'; // Import trang thêm danh mục
+import ListCategory from '@/views/ListCategory.vue'; // Import trang danh mục
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
@@ -29,6 +31,16 @@ const routes: Array<RouteRecordRaw> = [
     path: '/listproduct',
     name: 'Listproduct',
     component: Listproduct,
+  },
+  {
+    path: '/addcategory',
+    name: 'AddCategory',
+    component: AddCategory,
+  }, 
+  {
+    path: '/listcategory',
+    name: 'ListCategory',
+    component: ListCategory,
   },
 ];
 
