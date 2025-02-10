@@ -36,18 +36,10 @@ func main() {
 	app.Post("/register", controllers.Register)
 	app.Post("/login", controllers.Login)
 
-	// API Thêm sản phẩm
-	app.Post("/api/products", controllers.AddProduct)
-
-	// API Lấy danh sách sản phẩm
 	app.Get("/api/products", controllers.GetProducts)
-
-	// API Cập nhật sản phẩm
+	app.Post("/api/products", controllers.AddProduct)
 	app.Put("/api/products/{id:int}", controllers.UpdateProduct)
-
-	// API Xóa sản phẩm
 	app.Delete("/api/products/{id:int}", controllers.DeleteProduct)
-
 
 	app.Get("/api/categories", controllers.GetCategories)
 	app.Post("/api/categories", controllers.AddCategory)
